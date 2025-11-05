@@ -1,0 +1,29 @@
+# Файлы данных
+tasks.json
+*.json
+
+# Go
+Go/task-manager
+Go/task-manager.exe
+Go/*.exe
+
+# Python
+Python/__pycache__/
+Python/*.pyc
+Python/*.pyo
+Python/*.pyd
+Python/.Python
+Python/env/
+Python/venv/
+Python/.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,0 +1,215 @@
+package main
+
+import (
+	"bufio"
+	"fmt"
+	"os"
+	"strconv"
+	"strings"
+)
+
+func main() {
+	storage := NewStorage()
+
+	// Загружаем существующие задачи
+	if err := storage.Load(); err != nil {
+		fmt.Printf("Ошибка загрузки данных: %v\n", err)
+		return
+	}
+
+	reader := bufio.NewReader(os.Stdin)
+
+	fmt.Println("=== Менеджер Задач ===")
+
+	for {
+		fmt.Println("\nКоманды:")
+		fmt.Println("1. list - показать все задачи")
+		fmt.Println("2. add - добавить задачу")
+		fmt.Println("3. edit - редактировать задачу")
+		fmt.Println("4. status - изменить статус задачи")
+		fmt.Println("5. delete - удалить задачу")
+		fmt.Println("6. exit - выход")
+		fmt.Print("\nВведите команду: ")
+
+		command, _ := reader.ReadString('\n')
+		command = strings.TrimSpace(command)
+
+		switch command {
+		case "list", "1":
+			listTasks(storage)
+		case "add", "2":
+			addTask(storage, reader)
+		case "edit", "3":
+			editTask(storage, reader)
+		case "status", "4":
+			changeStatus(storage, reader)
+		case "delete", "5":
+			deleteTask(storage, reader)
+		case "exit", "6":
+			fmt.Println("До свидания!")
+			return
+		default:
+			fmt.Println("Неизвестная команда!")
+		}
+	}
+}
+
+func listTasks(storage *Storage) {
+	tasks := storage.ListTasks()
+
+	if len(tasks) == 0 {
+		fmt.Println("\nЗадач пока нет!")
+		return
+	}
+
+	fmt.Println("\n=== Список задач ===")
+	for _, task := range tasks {
+		statusEmoji := getStatusEmoji(task.Status)
+		fmt.Printf("\nID: %d %s\n", task.ID, statusEmoji)
+		fmt.Printf("Название: %s\n", task.Title)
+		fmt.Printf("Описание: %s\n", task.Description)
+		fmt.Printf("Статус: %s\n", task.Status)
+		fmt.Printf("Создано: %s\n", task.CreatedAt.Format("02.01.2006 15:04"))
+		fmt.Printf("Обновлено: %s\n", task.UpdatedAt.Format("02.01.2006 15:04"))
+		fmt.Println(strings.Repeat("-", 40))
+	}
+}
+
+func addTask(storage *Storage, reader *bufio.Reader) {
+	fmt.Print("\nНазвание задачи: ")
+	title, _ := reader.ReadString('\n')
+	title = strings.TrimSpace(title)
+
+	if title == "" {
+		fmt.Println("Название не может быть пустым!")
+		return
+	}
+
+	fmt.Print("Описание задачи: ")
+	description, _ := reader.ReadString('\n')
+	description = strings.TrimSpace(description)
+
+	task := storage.AddTask(title, description)
+
+	if err := storage.Save(); err != nil {
+		fmt.Printf("Ошибка сохранения: %v\n", err)
+		return
+	}
+
+	fmt.Printf("\n✓ Задача #%d успешно создана!\n", task.ID)
+}
+
+func editTask(storage *Storage, reader *bufio.Reader) {
+	fmt.Print("\nВведите ID задачи: ")
+	idStr, _ := reader.ReadString('\n')
+	id, err := strconv.Atoi(strings.TrimSpace(idStr))
+	if err != nil {
+		fmt.Println("Некорректный ID!")
+		return
+	}
+
+	task := storage.GetTask(id)
+	if task == nil {
+		fmt.Println("Задача не найдена!")
+		return
+	}
+
+	fmt.Printf("Текущее название: %s\n", task.Title)
+	fmt.Print("Новое название (Enter - оставить без изменений): ")
+	title, _ := reader.ReadString('\n')
+	title = strings.TrimSpace(title)
+
+	fmt.Printf("Текущее описание: %s\n", task.Description)
+	fmt.Print("Новое описание (Enter - оставить без изменений): ")
+	description, _ := reader.ReadString('\n')
+	description = strings.TrimSpace(description)
+
+	task.Update(title, description)
+
+	if err := storage.Save(); err != nil {
+		fmt.Printf("Ошибка сохранения: %v\n", err)
+		return
+	}
+
+	fmt.Println("\n✓ Задача успешно обновлена!")
+}
+
+func changeStatus(storage *Storage, reader *bufio.Reader) {
+	fmt.Print("\nВведите ID задачи: ")
+	idStr, _ := reader.ReadString('\n')
+	id, err := strconv.Atoi(strings.TrimSpace(idStr))
+	if err != nil {
+		fmt.Println("Некорректный ID!")
+		return
+	}
+
+	task := storage.GetTask(id)
+	if task == nil {
+		fmt.Println("Задача не найдена!")
+		return
+	}
+
+	fmt.Println("\nДоступные статусы:")
+	fmt.Println("1. todo - К выполнению")
+	fmt.Println("2. in_progress - В процессе")
+	fmt.Println("3. done - Выполнено")
+	fmt.Print("\nВыберите статус: ")
+
+	statusInput, _ := reader.ReadString('\n')
+	statusInput = strings.TrimSpace(statusInput)
+
+	var status string
+	switch statusInput {
+	case "1", "todo":
+		status = "todo"
+	case "2", "in_progress":
+		status = "in_progress"
+	case "3", "done":
+		status = "done"
+	default:
+		fmt.Println("Некорректный статус!")
+		return
+	}
+
+	task.UpdateStatus(status)
+
+	if err := storage.Save(); err != nil {
+		fmt.Printf("Ошибка сохранения: %v\n", err)
+		return
+	}
+
+	fmt.Println("\n✓ Статус задачи обновлен!")
+}
+
+func deleteTask(storage *Storage, reader *bufio.Reader) {
+	fmt.Print("\nВведите ID задачи: ")
+	idStr, _ := reader.ReadString('\n')
+	id, err := strconv.Atoi(strings.TrimSpace(idStr))
+	if err != nil {
+		fmt.Println("Некорректный ID!")
+		return
+	}
+
+	if storage.DeleteTask(id) {
+		if err := storage.Save(); err != nil {
+			fmt.Printf("Ошибка сохранения: %v\n", err)
+			return
+		}
+		fmt.Println("\n✓ Задача успешно удалена!")
+	} else {
+		fmt.Println("Задача не найдена!")
+	}
+}
+
+func getStatusEmoji(status string) string {
+	switch status {
+	case "todo":
+		return "📋"
+	case "in_progress":
+		return "⚙️"
+	case "done":
+		return "✅"
+	default:
+		return "❓"
+	}
+}
