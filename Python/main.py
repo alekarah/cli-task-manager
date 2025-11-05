@@ -119,6 +119,40 @@ def delete_task(storage: Storage):
         print("Задача не найдена!")
 
 
+def filter_tasks(storage: Storage):
+    """Фильтрует задачи по статусу"""
+    print("\nДоступные статусы:")
+    print("1. todo - К выполнению")
+    print("2. in_progress - В процессе")
+    print("3. done - Выполнено")
+
+    status_input = input("\nВыберите статус для фильтрации: ").strip()
+
+    status_map = {
+        "1": "todo",
+        "2": "in_progress",
+        "3": "done",
+        "todo": "todo",
+        "in_progress": "in_progress",
+        "done": "done"
+    }
+
+    status = status_map.get(status_input)
+    if not status:
+        print("Некорректный статус!")
+        return
+
+    tasks = storage.filter_tasks_by_status(status)
+
+    if not tasks:
+        print(f"\nЗадач со статусом '{status}' не найдено!")
+        return
+
+    print(f"\n=== Задачи со статусом '{status}' ===")
+    for task in tasks:
+        print(task)
+
+
 def main():
     """Основная функция программы"""
     storage = Storage()
@@ -137,6 +171,8 @@ def main():
         "4": change_status,
         "delete": delete_task,
         "5": delete_task,
+        "filter": filter_tasks,
+        "6": filter_tasks,
     }
 
     while True:
@@ -146,11 +182,12 @@ def main():
         print("3. edit - редактировать задачу")
         print("4. status - изменить статус задачи")
         print("5. delete - удалить задачу")
-        print("6. exit - выход")
+        print("6. filter - фильтровать задачи по статусу")
+        print("7. exit - выход")
 
         command = input("\nВведите команду: ").strip()
 
-        if command in ["exit", "6"]:
+        if command in ["exit", "7"]:
             print("До свидания!")
             break
 

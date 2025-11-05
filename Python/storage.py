@@ -65,3 +65,7 @@ class Storage:
     def list_tasks(self) -> List[Task]:
         """Возвращает все задачи"""
         return self.tasks
+
+    def filter_tasks_by_status(self, status: str) -> List[Task]:
+        """Возвращает задачи с указанным статусом"""
+        return [task for task in self.tasks if task.status == status]

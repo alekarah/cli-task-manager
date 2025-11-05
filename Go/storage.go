@@ -92,3 +92,14 @@ func (s *Storage) DeleteTask(id int) bool {
 func (s *Storage) ListTasks() []*Task {
 	return s.Tasks
 }
+
+// FilterTasksByStatus возвращает задачи с указанным статусом
+func (s *Storage) FilterTasksByStatus(status string) []*Task {
+	filtered := make([]*Task, 0)
+	for _, task := range s.Tasks {
+		if task.Status == status {
+			filtered = append(filtered, task)
+		}
+	}
+	return filtered
+}
