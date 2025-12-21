@@ -153,6 +153,26 @@ def filter_tasks(storage: Storage):
         print(task)
 
 
+def search_tasks(storage: Storage):
+    """Ищет задачи по тексту"""
+    print()
+    query = input("Введите текст для поиска: ").strip()
+
+    if not query:
+        print("Запрос не может быть пустым!")
+        return
+
+    tasks = storage.search_tasks(query)
+
+    if not tasks:
+        print(f"\nЗадачи, содержащие '{query}', не найдены!")
+        return
+
+    print(f"\n=== Результаты поиска для '{query}' ===")
+    for task in tasks:
+        print(task)
+
+
 def main():
     """Основная функция программы"""
     storage = Storage()
@@ -173,6 +193,8 @@ def main():
         "5": delete_task,
         "filter": filter_tasks,
         "6": filter_tasks,
+        "search": search_tasks,
+        "7": search_tasks,
     }
 
     while True:
@@ -183,11 +205,12 @@ def main():
         print("4. status - изменить статус задачи")
         print("5. delete - удалить задачу")
         print("6. filter - фильтровать задачи по статусу")
-        print("7. exit - выход")
+        print("7. search - поиск задач")
+        print("8. exit - выход")
 
         command = input("\nВведите команду: ").strip()
 
-        if command in ["exit", "7"]:
+        if command in ["exit", "8"]:
             print("До свидания!")
             break
 

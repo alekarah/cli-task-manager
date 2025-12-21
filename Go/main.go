@@ -29,7 +29,8 @@ func main() {
 		fmt.Println("4. status - изменить статус задачи")
 		fmt.Println("5. delete - удалить задачу")
 		fmt.Println("6. filter - фильтровать задачи по статусу")
-		fmt.Println("7. exit - выход")
+		fmt.Println("7. search - поиск задач")
+		fmt.Println("8. exit - выход")
 		fmt.Print("\nВведите команду: ")
 
 		command, _ := reader.ReadString('\n')
@@ -48,7 +49,9 @@ func main() {
 			deleteTask(storage, reader)
 		case "filter", "6":
 			filterTasks(storage, reader)
-		case "exit", "7":
+		case "search", "7":
+			searchTasks(storage, reader)
+		case "exit", "8":
 			fmt.Println("До свидания!")
 			return
 		default:
@@ -235,6 +238,36 @@ func filterTasks(storage *Storage, reader *bufio.Reader) {
 	}
 
 	fmt.Printf("\n=== Задачи со статусом '%s' ===\n", status)
+	for _, task := range tasks {
+		statusEmoji := getStatusEmoji(task.Status)
+		fmt.Printf("\nID: %d %s\n", task.ID, statusEmoji)
+		fmt.Printf("Название: %s\n", task.Title)
+		fmt.Printf("Описание: %s\n", task.Description)
+		fmt.Printf("Статус: %s\n", task.Status)
+		fmt.Printf("Создано: %s\n", task.CreatedAt.Format("02.01.2006 15:04"))
+		fmt.Printf("Обновлено: %s\n", task.UpdatedAt.Format("02.01.2006 15:04"))
+		fmt.Println(strings.Repeat("-", 40))
+	}
+}
+
+func searchTasks(storage *Storage, reader *bufio.Reader) {
+	fmt.Print("\nВведите текст для поиска: ")
+	query, _ := reader.ReadString('\n')
+	query = strings.TrimSpace(query)
+
+	if query == "" {
+		fmt.Println("Запрос не может быть пустым!")
+		return
+	}
+
+	tasks := storage.SearchTasks(query)
+
+	if len(tasks) == 0 {
+		fmt.Printf("\nЗадачи, содержащие '%s', не найдены!\n", query)
+		return
+	}
+
+	fmt.Printf("\n=== Результаты поиска для '%s' ===\n", query)
 	for _, task := range tasks {
 		statusEmoji := getStatusEmoji(task.Status)
 		fmt.Printf("\nID: %d %s\n", task.ID, statusEmoji)

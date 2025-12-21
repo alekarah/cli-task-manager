@@ -69,3 +69,11 @@ class Storage:
     def filter_tasks_by_status(self, status: str) -> List[Task]:
         """Возвращает задачи с указанным статусом"""
         return [task for task in self.tasks if task.status == status]
+
+    def search_tasks(self, query: str) -> List[Task]:
+        """Ищет задачи по тексту в названии или описании"""
+        query_lower = query.lower()
+        return [
+            task for task in self.tasks
+            if query_lower in task.title.lower() or query_lower in task.description.lower()
+        ]

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 )
 
 const dataFile = "tasks.json"
@@ -102,4 +103,20 @@ func (s *Storage) FilterTasksByStatus(status string) []*Task {
 		}
 	}
 	return filtered
+}
+
+// SearchTasks ищет задачи по тексту в названии или описании
+func (s *Storage) SearchTasks(query string) []*Task {
+	results := make([]*Task, 0)
+	queryLower := strings.ToLower(query)
+
+	for _, task := range s.Tasks {
+		titleLower := strings.ToLower(task.Title)
+		descLower := strings.ToLower(task.Description)
+
+		if strings.Contains(titleLower, queryLower) || strings.Contains(descLower, queryLower) {
+			results = append(results, task)
+		}
+	}
+	return results
 }
