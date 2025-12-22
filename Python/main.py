@@ -1,6 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import sys
+import io
+
+# Настройка UTF-8 для Windows консоли
+if sys.platform == 'win32':
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
+
 from storage import Storage
 
 
@@ -173,6 +181,50 @@ def search_tasks(storage: Storage):
         print(task)
 
 
+def sort_tasks(storage: Storage):
+    """Сортирует задачи"""
+    print("\nДоступные варианты сортировки:")
+    print("1. id - по ID")
+    print("2. created - по дате создания (сначала старые)")
+    print("3. updated - по дате обновления (сначала новые)")
+    print("4. status - по статусу")
+
+    sort_input = input("\nВыберите вариант сортировки: ").strip()
+
+    sort_map = {
+        "1": "id",
+        "2": "created",
+        "3": "updated",
+        "4": "status",
+        "id": "id",
+        "created": "created",
+        "updated": "updated",
+        "status": "status"
+    }
+
+    sort_by = sort_map.get(sort_input)
+    if not sort_by:
+        print("Некорректный вариант сортировки!")
+        return
+
+    tasks = storage.sort_tasks(sort_by)
+
+    if not tasks:
+        print("\nЗадач пока нет!")
+        return
+
+    sort_names = {
+        "id": "ID",
+        "created": "дате создания",
+        "updated": "дате обновления",
+        "status": "статусу"
+    }
+
+    print(f"\n=== Задачи, отсортированные по {sort_names[sort_by]} ===")
+    for task in tasks:
+        print(task)
+
+
 def main():
     """Основная функция программы"""
     storage = Storage()
@@ -195,6 +247,8 @@ def main():
         "6": filter_tasks,
         "search": search_tasks,
         "7": search_tasks,
+        "sort": sort_tasks,
+        "8": sort_tasks,
     }
 
     while True:
@@ -206,11 +260,12 @@ def main():
         print("5. delete - удалить задачу")
         print("6. filter - фильтровать задачи по статусу")
         print("7. search - поиск задач")
-        print("8. exit - выход")
+        print("8. sort - сортировать задачи")
+        print("9. exit - выход")
 
         command = input("\nВведите команду: ").strip()
 
-        if command in ["exit", "8"]:
+        if command in ["exit", "9"]:
             print("До свидания!")
             break
 

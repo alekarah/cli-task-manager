@@ -30,7 +30,8 @@ func main() {
 		fmt.Println("5. delete - удалить задачу")
 		fmt.Println("6. filter - фильтровать задачи по статусу")
 		fmt.Println("7. search - поиск задач")
-		fmt.Println("8. exit - выход")
+		fmt.Println("8. sort - сортировать задачи")
+		fmt.Println("9. exit - выход")
 		fmt.Print("\nВведите команду: ")
 
 		command, _ := reader.ReadString('\n')
@@ -51,7 +52,9 @@ func main() {
 			filterTasks(storage, reader)
 		case "search", "7":
 			searchTasks(storage, reader)
-		case "exit", "8":
+		case "sort", "8":
+			sortTasks(storage, reader)
+		case "exit", "9":
 			fmt.Println("До свидания!")
 			return
 		default:
@@ -268,6 +271,59 @@ func searchTasks(storage *Storage, reader *bufio.Reader) {
 	}
 
 	fmt.Printf("\n=== Результаты поиска для '%s' ===\n", query)
+	for _, task := range tasks {
+		statusEmoji := getStatusEmoji(task.Status)
+		fmt.Printf("\nID: %d %s\n", task.ID, statusEmoji)
+		fmt.Printf("Название: %s\n", task.Title)
+		fmt.Printf("Описание: %s\n", task.Description)
+		fmt.Printf("Статус: %s\n", task.Status)
+		fmt.Printf("Создано: %s\n", task.CreatedAt.Format("02.01.2006 15:04"))
+		fmt.Printf("Обновлено: %s\n", task.UpdatedAt.Format("02.01.2006 15:04"))
+		fmt.Println(strings.Repeat("-", 40))
+	}
+}
+
+func sortTasks(storage *Storage, reader *bufio.Reader) {
+	fmt.Println("\nДоступные варианты сортировки:")
+	fmt.Println("1. id - по ID")
+	fmt.Println("2. created - по дате создания (сначала старые)")
+	fmt.Println("3. updated - по дате обновления (сначала новые)")
+	fmt.Println("4. status - по статусу")
+	fmt.Print("\nВыберите вариант сортировки: ")
+
+	sortInput, _ := reader.ReadString('\n')
+	sortInput = strings.TrimSpace(sortInput)
+
+	var sortBy string
+	switch sortInput {
+	case "1", "id":
+		sortBy = "id"
+	case "2", "created":
+		sortBy = "created"
+	case "3", "updated":
+		sortBy = "updated"
+	case "4", "status":
+		sortBy = "status"
+	default:
+		fmt.Println("Некорректный вариант сортировки!")
+		return
+	}
+
+	tasks := storage.SortTasks(sortBy)
+
+	if len(tasks) == 0 {
+		fmt.Println("\nЗадач пока нет!")
+		return
+	}
+
+	sortNames := map[string]string{
+		"id":      "ID",
+		"created": "дате создания",
+		"updated": "дате обновления",
+		"status":  "статусу",
+	}
+
+	fmt.Printf("\n=== Задачи, отсортированные по %s ===\n", sortNames[sortBy])
 	for _, task := range tasks {
 		statusEmoji := getStatusEmoji(task.Status)
 		fmt.Printf("\nID: %d %s\n", task.ID, statusEmoji)

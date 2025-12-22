@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 )
 
@@ -119,4 +120,31 @@ func (s *Storage) SearchTasks(query string) []*Task {
 		}
 	}
 	return results
+}
+
+// SortTasks сортирует и возвращает задачи по указанному критерию
+func (s *Storage) SortTasks(sortBy string) []*Task {
+	tasks := make([]*Task, len(s.Tasks))
+	copy(tasks, s.Tasks)
+
+	switch sortBy {
+	case "id":
+		sort.Slice(tasks, func(i, j int) bool {
+			return tasks[i].ID < tasks[j].ID
+		})
+	case "created":
+		sort.Slice(tasks, func(i, j int) bool {
+			return tasks[i].CreatedAt.Before(tasks[j].CreatedAt)
+		})
+	case "updated":
+		sort.Slice(tasks, func(i, j int) bool {
+			return tasks[i].UpdatedAt.After(tasks[j].UpdatedAt)
+		})
+	case "status":
+		sort.Slice(tasks, func(i, j int) bool {
+			return tasks[i].Status < tasks[j].Status
+		})
+	}
+
+	return tasks
 }

@@ -45,8 +45,13 @@ class Task:
         """Создает задачу из словаря"""
         task = cls(data["id"], data["title"], data["description"])
         task.status = data["status"]
-        task.created_at = datetime.fromisoformat(data["created_at"])
-        task.updated_at = datetime.fromisoformat(data["updated_at"])
+
+        # Обработка формата ISO с 'Z' (UTC)
+        created_str = data["created_at"].replace('Z', '+00:00')
+        updated_str = data["updated_at"].replace('Z', '+00:00')
+
+        task.created_at = datetime.fromisoformat(created_str)
+        task.updated_at = datetime.fromisoformat(updated_str)
         return task
 
     def __str__(self) -> str:

@@ -77,3 +77,18 @@ class Storage:
             task for task in self.tasks
             if query_lower in task.title.lower() or query_lower in task.description.lower()
         ]
+
+    def sort_tasks(self, sort_by: str) -> List[Task]:
+        """Сортирует и возвращает задачи по указанному критерию"""
+        tasks = self.tasks.copy()
+
+        if sort_by == "id":
+            tasks.sort(key=lambda t: t.id)
+        elif sort_by == "created":
+            tasks.sort(key=lambda t: t.created_at)
+        elif sort_by == "updated":
+            tasks.sort(key=lambda t: t.updated_at, reverse=True)
+        elif sort_by == "status":
+            tasks.sort(key=lambda t: t.status)
+
+        return tasks
