@@ -9,7 +9,8 @@ type Task struct {
 	ID          int       `json:"id"`
 	Title       string    `json:"title"`
 	Description string    `json:"description"`
-	Status      string    `json:"status"` // "todo", "in_progress", "done"
+	Status      string    `json:"status"`   // "todo", "in_progress", "done"
+	Priority    string    `json:"priority"` // "low", "medium", "high"
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
 }
@@ -22,6 +23,7 @@ func NewTask(id int, title, description string) *Task {
 		Title:       title,
 		Description: description,
 		Status:      "todo",
+		Priority:    "medium",
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
@@ -41,5 +43,11 @@ func (t *Task) Update(title, description string) {
 	if description != "" {
 		t.Description = description
 	}
+	t.UpdatedAt = time.Now()
+}
+
+// UpdatePriority обновляет приоритет задачи
+func (t *Task) UpdatePriority(priority string) {
+	t.Priority = priority
 	t.UpdatedAt = time.Now()
 }

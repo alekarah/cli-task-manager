@@ -25,13 +25,12 @@ func main() {
 		fmt.Println("\nКоманды:")
 		fmt.Println("1. list - показать все задачи")
 		fmt.Println("2. add - добавить задачу")
-		fmt.Println("3. edit - редактировать задачу")
-		fmt.Println("4. status - изменить статус задачи")
-		fmt.Println("5. delete - удалить задачу")
-		fmt.Println("6. filter - фильтровать задачи по статусу")
-		fmt.Println("7. search - поиск задач")
-		fmt.Println("8. sort - сортировать задачи")
-		fmt.Println("9. exit - выход")
+		fmt.Println("3. update - обновить задачу (название, статус, приоритет)")
+		fmt.Println("4. delete - удалить задачу")
+		fmt.Println("5. filter - фильтровать задачи по статусу")
+		fmt.Println("6. search - поиск задач")
+		fmt.Println("7. sort - сортировать задачи")
+		fmt.Println("8. exit - выход")
 		fmt.Print("\nВведите команду: ")
 
 		command, _ := reader.ReadString('\n')
@@ -42,19 +41,17 @@ func main() {
 			listTasks(storage)
 		case "add", "2":
 			addTask(storage, reader)
-		case "edit", "3":
-			editTask(storage, reader)
-		case "status", "4":
-			changeStatus(storage, reader)
-		case "delete", "5":
+		case "update", "3":
+			updateTask(storage, reader)
+		case "delete", "4":
 			deleteTask(storage, reader)
-		case "filter", "6":
+		case "filter", "5":
 			filterTasks(storage, reader)
-		case "search", "7":
+		case "search", "6":
 			searchTasks(storage, reader)
-		case "sort", "8":
+		case "sort", "7":
 			sortTasks(storage, reader)
-		case "exit", "9":
+		case "exit", "8":
 			fmt.Println("До свидания!")
 			return
 		default:
@@ -73,14 +70,7 @@ func listTasks(storage *Storage) {
 
 	fmt.Println("\n=== Список задач ===")
 	for _, task := range tasks {
-		statusEmoji := getStatusEmoji(task.Status)
-		fmt.Printf("\nID: %d %s\n", task.ID, statusEmoji)
-		fmt.Printf("Название: %s\n", task.Title)
-		fmt.Printf("Описание: %s\n", task.Description)
-		fmt.Printf("Статус: %s\n", task.Status)
-		fmt.Printf("Создано: %s\n", task.CreatedAt.Format("02.01.2006 15:04"))
-		fmt.Printf("Обновлено: %s\n", task.UpdatedAt.Format("02.01.2006 15:04"))
-		fmt.Println(strings.Repeat("-", 40))
+		printTask(task)
 	}
 }
 
@@ -108,88 +98,6 @@ func addTask(storage *Storage, reader *bufio.Reader) {
 	fmt.Printf("\n✓ Задача #%d успешно создана!\n", task.ID)
 }
 
-func editTask(storage *Storage, reader *bufio.Reader) {
-	fmt.Print("\nВведите ID задачи: ")
-	idStr, _ := reader.ReadString('\n')
-	id, err := strconv.Atoi(strings.TrimSpace(idStr))
-	if err != nil {
-		fmt.Println("Некорректный ID!")
-		return
-	}
-
-	task := storage.GetTask(id)
-	if task == nil {
-		fmt.Println("Задача не найдена!")
-		return
-	}
-
-	fmt.Printf("Текущее название: %s\n", task.Title)
-	fmt.Print("Новое название (Enter - оставить без изменений): ")
-	title, _ := reader.ReadString('\n')
-	title = strings.TrimSpace(title)
-
-	fmt.Printf("Текущее описание: %s\n", task.Description)
-	fmt.Print("Новое описание (Enter - оставить без изменений): ")
-	description, _ := reader.ReadString('\n')
-	description = strings.TrimSpace(description)
-
-	task.Update(title, description)
-
-	if err := storage.Save(); err != nil {
-		fmt.Printf("Ошибка сохранения: %v\n", err)
-		return
-	}
-
-	fmt.Println("\n✓ Задача успешно обновлена!")
-}
-
-func changeStatus(storage *Storage, reader *bufio.Reader) {
-	fmt.Print("\nВведите ID задачи: ")
-	idStr, _ := reader.ReadString('\n')
-	id, err := strconv.Atoi(strings.TrimSpace(idStr))
-	if err != nil {
-		fmt.Println("Некорректный ID!")
-		return
-	}
-
-	task := storage.GetTask(id)
-	if task == nil {
-		fmt.Println("Задача не найдена!")
-		return
-	}
-
-	fmt.Println("\nДоступные статусы:")
-	fmt.Println("1. todo - К выполнению")
-	fmt.Println("2. in_progress - В процессе")
-	fmt.Println("3. done - Выполнено")
-	fmt.Print("\nВыберите статус: ")
-
-	statusInput, _ := reader.ReadString('\n')
-	statusInput = strings.TrimSpace(statusInput)
-
-	var status string
-	switch statusInput {
-	case "1", "todo":
-		status = "todo"
-	case "2", "in_progress":
-		status = "in_progress"
-	case "3", "done":
-		status = "done"
-	default:
-		fmt.Println("Некорректный статус!")
-		return
-	}
-
-	task.UpdateStatus(status)
-
-	if err := storage.Save(); err != nil {
-		fmt.Printf("Ошибка сохранения: %v\n", err)
-		return
-	}
-
-	fmt.Println("\n✓ Статус задачи обновлен!")
-}
-
 func deleteTask(storage *Storage, reader *bufio.Reader) {
 	fmt.Print("\nВведите ID задачи: ")
 	idStr, _ := reader.ReadString('\n')
@@ -208,6 +116,180 @@ func deleteTask(storage *Storage, reader *bufio.Reader) {
 	} else {
 		fmt.Println("Задача не найдена!")
 	}
+}
+
+func updateTask(storage *Storage, reader *bufio.Reader) {
+	fmt.Print("\nВведите ID задачи: ")
+	idStr, _ := reader.ReadString('\n')
+	id, err := strconv.Atoi(strings.TrimSpace(idStr))
+	if err != nil {
+		fmt.Println("Некорректный ID!")
+		return
+	}
+
+	task := storage.GetTask(id)
+	if task == nil {
+		fmt.Println("Задача не найдена!")
+		return
+	}
+
+	printTask(task)
+
+	fmt.Println("\nЧто вы хотите обновить?")
+	fmt.Println("1. Название и описание")
+	fmt.Println("2. Статус")
+	fmt.Println("3. Приоритет")
+	fmt.Println("4. Всё сразу")
+	fmt.Print("\nВыберите опцию: ")
+
+	optionStr, _ := reader.ReadString('\n')
+	option := strings.TrimSpace(optionStr)
+
+	switch option {
+	case "1":
+		fmt.Printf("\nТекущее название: %s\n", task.Title)
+		fmt.Print("Новое название (Enter - оставить без изменений): ")
+		title, _ := reader.ReadString('\n')
+		title = strings.TrimSpace(title)
+
+		fmt.Printf("Текущее описание: %s\n", task.Description)
+		fmt.Print("Новое описание (Enter - оставить без изменений): ")
+		description, _ := reader.ReadString('\n')
+		description = strings.TrimSpace(description)
+
+		task.Update(title, description)
+
+	case "2":
+		fmt.Printf("\nТекущий статус: %s\n", task.Status)
+		fmt.Println("\nДоступные статусы:")
+		fmt.Println("1. todo - К выполнению")
+		fmt.Println("2. in_progress - В процессе")
+		fmt.Println("3. done - Выполнено")
+		fmt.Print("\nВыберите статус: ")
+
+		statusInput, _ := reader.ReadString('\n')
+		statusInput = strings.TrimSpace(statusInput)
+
+		var status string
+		switch statusInput {
+		case "1", "todo":
+			status = "todo"
+		case "2", "in_progress":
+			status = "in_progress"
+		case "3", "done":
+			status = "done"
+		default:
+			fmt.Println("Некорректный статус!")
+			return
+		}
+
+		task.UpdateStatus(status)
+
+	case "3":
+		fmt.Printf("\nТекущий приоритет: %s\n", task.Priority)
+		fmt.Println("\nДоступные приоритеты:")
+		fmt.Println("1. low - Низкий 🟢")
+		fmt.Println("2. medium - Средний 🟡")
+		fmt.Println("3. high - Высокий 🔴")
+		fmt.Print("\nВыберите приоритет: ")
+
+		priorityInput, _ := reader.ReadString('\n')
+		priorityInput = strings.TrimSpace(priorityInput)
+
+		var priority string
+		switch priorityInput {
+		case "1", "low":
+			priority = "low"
+		case "2", "medium":
+			priority = "medium"
+		case "3", "high":
+			priority = "high"
+		default:
+			fmt.Println("Некорректный приоритет!")
+			return
+		}
+
+		task.UpdatePriority(priority)
+
+	case "4":
+		// Название и описание
+		fmt.Printf("\nТекущее название: %s\n", task.Title)
+		fmt.Print("Новое название (Enter - оставить без изменений): ")
+		title, _ := reader.ReadString('\n')
+		title = strings.TrimSpace(title)
+
+		fmt.Printf("Текущее описание: %s\n", task.Description)
+		fmt.Print("Новое описание (Enter - оставить без изменений): ")
+		description, _ := reader.ReadString('\n')
+		description = strings.TrimSpace(description)
+
+		task.Update(title, description)
+
+		// Статус
+		fmt.Printf("\nТекущий статус: %s\n", task.Status)
+		fmt.Println("Доступные статусы:")
+		fmt.Println("1. todo")
+		fmt.Println("2. in_progress")
+		fmt.Println("3. done")
+		fmt.Print("Выберите статус (Enter - оставить без изменений): ")
+
+		statusInput, _ := reader.ReadString('\n')
+		statusInput = strings.TrimSpace(statusInput)
+
+		if statusInput != "" {
+			var status string
+			switch statusInput {
+			case "1", "todo":
+				status = "todo"
+			case "2", "in_progress":
+				status = "in_progress"
+			case "3", "done":
+				status = "done"
+			default:
+				fmt.Println("Некорректный статус!")
+				return
+			}
+			task.UpdateStatus(status)
+		}
+
+		// Приоритет
+		fmt.Printf("\nТекущий приоритет: %s\n", task.Priority)
+		fmt.Println("Доступные приоритеты:")
+		fmt.Println("1. low 🟢")
+		fmt.Println("2. medium 🟡")
+		fmt.Println("3. high 🔴")
+		fmt.Print("Выберите приоритет (Enter - оставить без изменений): ")
+
+		priorityInput, _ := reader.ReadString('\n')
+		priorityInput = strings.TrimSpace(priorityInput)
+
+		if priorityInput != "" {
+			var priority string
+			switch priorityInput {
+			case "1", "low":
+				priority = "low"
+			case "2", "medium":
+				priority = "medium"
+			case "3", "high":
+				priority = "high"
+			default:
+				fmt.Println("Некорректный приоритет!")
+				return
+			}
+			task.UpdatePriority(priority)
+		}
+
+	default:
+		fmt.Println("Некорректная опция!")
+		return
+	}
+
+	if err := storage.Save(); err != nil {
+		fmt.Printf("Ошибка сохранения: %v\n", err)
+		return
+	}
+
+	fmt.Println("\n✓ Задача успешно обновлена!")
 }
 
 func filterTasks(storage *Storage, reader *bufio.Reader) {
@@ -242,14 +324,7 @@ func filterTasks(storage *Storage, reader *bufio.Reader) {
 
 	fmt.Printf("\n=== Задачи со статусом '%s' ===\n", status)
 	for _, task := range tasks {
-		statusEmoji := getStatusEmoji(task.Status)
-		fmt.Printf("\nID: %d %s\n", task.ID, statusEmoji)
-		fmt.Printf("Название: %s\n", task.Title)
-		fmt.Printf("Описание: %s\n", task.Description)
-		fmt.Printf("Статус: %s\n", task.Status)
-		fmt.Printf("Создано: %s\n", task.CreatedAt.Format("02.01.2006 15:04"))
-		fmt.Printf("Обновлено: %s\n", task.UpdatedAt.Format("02.01.2006 15:04"))
-		fmt.Println(strings.Repeat("-", 40))
+		printTask(task)
 	}
 }
 
@@ -272,14 +347,7 @@ func searchTasks(storage *Storage, reader *bufio.Reader) {
 
 	fmt.Printf("\n=== Результаты поиска для '%s' ===\n", query)
 	for _, task := range tasks {
-		statusEmoji := getStatusEmoji(task.Status)
-		fmt.Printf("\nID: %d %s\n", task.ID, statusEmoji)
-		fmt.Printf("Название: %s\n", task.Title)
-		fmt.Printf("Описание: %s\n", task.Description)
-		fmt.Printf("Статус: %s\n", task.Status)
-		fmt.Printf("Создано: %s\n", task.CreatedAt.Format("02.01.2006 15:04"))
-		fmt.Printf("Обновлено: %s\n", task.UpdatedAt.Format("02.01.2006 15:04"))
-		fmt.Println(strings.Repeat("-", 40))
+		printTask(task)
 	}
 }
 
@@ -289,6 +357,7 @@ func sortTasks(storage *Storage, reader *bufio.Reader) {
 	fmt.Println("2. created - по дате создания (сначала старые)")
 	fmt.Println("3. updated - по дате обновления (сначала новые)")
 	fmt.Println("4. status - по статусу")
+	fmt.Println("5. priority - по приоритету (сначала высокий)")
 	fmt.Print("\nВыберите вариант сортировки: ")
 
 	sortInput, _ := reader.ReadString('\n')
@@ -304,6 +373,8 @@ func sortTasks(storage *Storage, reader *bufio.Reader) {
 		sortBy = "updated"
 	case "4", "status":
 		sortBy = "status"
+	case "5", "priority":
+		sortBy = "priority"
 	default:
 		fmt.Println("Некорректный вариант сортировки!")
 		return
@@ -317,22 +388,16 @@ func sortTasks(storage *Storage, reader *bufio.Reader) {
 	}
 
 	sortNames := map[string]string{
-		"id":      "ID",
-		"created": "дате создания",
-		"updated": "дате обновления",
-		"status":  "статусу",
+		"id":       "ID",
+		"created":  "дате создания",
+		"updated":  "дате обновления",
+		"status":   "статусу",
+		"priority": "приоритету",
 	}
 
 	fmt.Printf("\n=== Задачи, отсортированные по %s ===\n", sortNames[sortBy])
 	for _, task := range tasks {
-		statusEmoji := getStatusEmoji(task.Status)
-		fmt.Printf("\nID: %d %s\n", task.ID, statusEmoji)
-		fmt.Printf("Название: %s\n", task.Title)
-		fmt.Printf("Описание: %s\n", task.Description)
-		fmt.Printf("Статус: %s\n", task.Status)
-		fmt.Printf("Создано: %s\n", task.CreatedAt.Format("02.01.2006 15:04"))
-		fmt.Printf("Обновлено: %s\n", task.UpdatedAt.Format("02.01.2006 15:04"))
-		fmt.Println(strings.Repeat("-", 40))
+		printTask(task)
 	}
 }
 
@@ -347,4 +412,30 @@ func getStatusEmoji(status string) string {
 	default:
 		return "❓"
 	}
+}
+
+func getPriorityEmoji(priority string) string {
+	switch priority {
+	case "low":
+		return "🟢"
+	case "medium":
+		return "🟡"
+	case "high":
+		return "🔴"
+	default:
+		return "⚪"
+	}
+}
+
+func printTask(task *Task) {
+	statusEmoji := getStatusEmoji(task.Status)
+	priorityEmoji := getPriorityEmoji(task.Priority)
+	fmt.Printf("\nID: %d %s %s\n", task.ID, statusEmoji, priorityEmoji)
+	fmt.Printf("Название: %s\n", task.Title)
+	fmt.Printf("Описание: %s\n", task.Description)
+	fmt.Printf("Статус: %s\n", task.Status)
+	fmt.Printf("Приоритет: %s\n", task.Priority)
+	fmt.Printf("Создано: %s\n", task.CreatedAt.Format("02.01.2006 15:04"))
+	fmt.Printf("Обновлено: %s\n", task.UpdatedAt.Format("02.01.2006 15:04"))
+	fmt.Println(strings.Repeat("-", 40))
 }

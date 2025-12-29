@@ -144,6 +144,11 @@ func (s *Storage) SortTasks(sortBy string) []*Task {
 		sort.Slice(tasks, func(i, j int) bool {
 			return tasks[i].Status < tasks[j].Status
 		})
+	case "priority":
+		priorityOrder := map[string]int{"high": 1, "medium": 2, "low": 3}
+		sort.Slice(tasks, func(i, j int) bool {
+			return priorityOrder[tasks[i].Priority] < priorityOrder[tasks[j].Priority]
+		})
 	}
 
 	return tasks

@@ -10,6 +10,7 @@ class Task:
         self.title = title
         self.description = description
         self.status = "todo"  # todo, in_progress, done
+        self.priority = "medium"  # low, medium, high
         self.created_at = datetime.now()
         self.updated_at = datetime.now()
 
@@ -29,6 +30,14 @@ class Task:
             self.description = description
         self.updated_at = datetime.now()
 
+    def update_priority(self, priority: str):
+        """Обновляет приоритет задачи"""
+        if priority in ["low", "medium", "high"]:
+            self.priority = priority
+            self.updated_at = datetime.now()
+        else:
+            raise ValueError("Некорректный приоритет")
+
     def to_dict(self) -> dict:
         """Преобразует задачу в словарь"""
         return {
@@ -36,6 +45,7 @@ class Task:
             "title": self.title,
             "description": self.description,
             "status": self.status,
+            "priority": self.priority,
             "created_at": self.created_at.isoformat(),
             "updated_at": self.updated_at.isoformat()
         }
@@ -45,6 +55,7 @@ class Task:
         """Создает задачу из словаря"""
         task = cls(data["id"], data["title"], data["description"])
         task.status = data["status"]
+        task.priority = data.get("priority", "medium")  # По умолчанию medium для старых задач
 
         # Обработка формата ISO с 'Z' (UTC)
         created_str = data["created_at"].replace('Z', '+00:00')
@@ -60,11 +71,17 @@ class Task:
             "in_progress": "⚙️",
             "done": "✅"
         }
+        priority_emoji = {
+            "low": "🟢",
+            "medium": "🟡",
+            "high": "🔴"
+        }
         return f"""
-ID: {self.id} {status_emoji.get(self.status, '❓')}
+ID: {self.id} {status_emoji.get(self.status, '❓')} {priority_emoji.get(self.priority, '⚪')}
 Название: {self.title}
 Описание: {self.description}
 Статус: {self.status}
+Приоритет: {self.priority}
 Создано: {self.created_at.strftime('%d.%m.%Y %H:%M')}
 Обновлено: {self.updated_at.strftime('%d.%m.%Y %H:%M')}
 {'-' * 40}"""

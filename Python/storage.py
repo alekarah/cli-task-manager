@@ -90,5 +90,8 @@ class Storage:
             tasks.sort(key=lambda t: t.updated_at, reverse=True)
         elif sort_by == "status":
             tasks.sort(key=lambda t: t.status)
+        elif sort_by == "priority":
+            priority_order = {"high": 1, "medium": 2, "low": 3}
+            tasks.sort(key=lambda t: priority_order.get(t.priority, 2))
 
         return tasks
