@@ -6,13 +6,14 @@ import (
 
 // Task представляет структуру задачи
 type Task struct {
-	ID          int       `json:"id"`
-	Title       string    `json:"title"`
-	Description string    `json:"description"`
-	Status      string    `json:"status"`   // "todo", "in_progress", "done"
-	Priority    string    `json:"priority"` // "low", "medium", "high"
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	ID          int        `json:"id"`
+	Title       string     `json:"title"`
+	Description string     `json:"description"`
+	Status      string     `json:"status"`   // "todo", "in_progress", "done"
+	Priority    string     `json:"priority"` // "low", "medium", "high"
+	Deadline    *time.Time `json:"deadline,omitempty"`
+	CreatedAt   time.Time  `json:"created_at"`
+	UpdatedAt   time.Time  `json:"updated_at"`
 }
 
 // NewTask создает новую задачу
@@ -49,5 +50,11 @@ func (t *Task) Update(title, description string) {
 // UpdatePriority обновляет приоритет задачи
 func (t *Task) UpdatePriority(priority string) {
 	t.Priority = priority
+	t.UpdatedAt = time.Now()
+}
+
+// UpdateDeadline обновляет дедлайн задачи
+func (t *Task) UpdateDeadline(deadline *time.Time) {
+	t.Deadline = deadline
 	t.UpdatedAt = time.Now()
 }

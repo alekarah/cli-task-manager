@@ -78,7 +78,8 @@ def update_task(storage: Storage):
     print("1. Название и описание")
     print("2. Статус")
     print("3. Приоритет")
-    print("4. Всё сразу")
+    print("4. Дедлайн")
+    print("5. Всё сразу")
 
     option = input("\nВыберите опцию: ").strip()
 
@@ -118,6 +119,34 @@ def update_task(storage: Storage):
             return
 
     elif option == "4":
+        # Дедлайн
+        from datetime import datetime
+        if task.deadline:
+            print(f"\nТекущий дедлайн: {task.deadline.strftime('%d.%m.%Y %H:%M')}")
+        else:
+            print("\nДедлайн не установлен")
+        print("Введите новый дедлайн в формате ДД.ММ.ГГГГ ЧЧ:ММ")
+        print("Или просто ДД.ММ.ГГГГ (время будет 23:59)")
+        print("Или оставьте пустым для удаления дедлайна")
+        deadline_input = input("Дедлайн: ").strip()
+
+        if not deadline_input:
+            task.update_deadline(None)
+        else:
+            try:
+                # Пытаемся распарсить с временем
+                if " " in deadline_input:
+                    deadline = datetime.strptime(deadline_input, "%d.%m.%Y %H:%M")
+                else:
+                    # Если только дата, устанавливаем время 23:59
+                    deadline = datetime.strptime(deadline_input, "%d.%m.%Y")
+                    deadline = deadline.replace(hour=23, minute=59)
+                task.update_deadline(deadline)
+            except ValueError:
+                print("Некорректный формат даты!")
+                return
+
+    elif option == "5":
         # Название и описание
         print(f"\nТекущее название: {task.title}")
         title = input("Новое название (Enter - оставить): ").strip()
@@ -146,6 +175,28 @@ def update_task(storage: Storage):
             priority = priority_map.get(priority_input)
             if priority:
                 task.update_priority(priority)
+
+        # Дедлайн
+        from datetime import datetime
+        if task.deadline:
+            print(f"\nТекущий дедлайн: {task.deadline.strftime('%d.%m.%Y %H:%M')}")
+        else:
+            print("\nДедлайн не установлен")
+        print("Формат: ДД.ММ.ГГГГ ЧЧ:ММ или ДД.ММ.ГГГГ")
+        deadline_input = input("Дедлайн (Enter - оставить): ").strip()
+        if deadline_input:
+            if deadline_input.lower() == "удалить":
+                task.update_deadline(None)
+            else:
+                try:
+                    if " " in deadline_input:
+                        deadline = datetime.strptime(deadline_input, "%d.%m.%Y %H:%M")
+                    else:
+                        deadline = datetime.strptime(deadline_input, "%d.%m.%Y")
+                        deadline = deadline.replace(hour=23, minute=59)
+                    task.update_deadline(deadline)
+                except ValueError:
+                    print("Некорректный формат даты! Дедлайн не обновлен.")
 
     else:
         print("Некорректная опция!")
@@ -285,7 +336,7 @@ def main():
         print("\nКоманды:")
         print("1. list - показать все задачи")
         print("2. add - добавить задачу")
-        print("3. update - обновить задачу (название, статус, приоритет)")
+        print("3. update - обновить задачу (название, статус, приоритет, дедлайн)")
         print("4. delete - удалить задачу")
         print("5. filter - фильтровать задачи по статусу")
         print("6. search - поиск задач")

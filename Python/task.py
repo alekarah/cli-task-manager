@@ -11,6 +11,7 @@ class Task:
         self.description = description
         self.status = "todo"  # todo, in_progress, done
         self.priority = "medium"  # low, medium, high
+        self.deadline: Optional[datetime] = None
         self.created_at = datetime.now()
         self.updated_at = datetime.now()
 
@@ -38,6 +39,11 @@ class Task:
         else:
             raise ValueError("Некорректный приоритет")
 
+    def update_deadline(self, deadline: Optional[datetime]):
+        """Обновляет дедлайн задачи"""
+        self.deadline = deadline
+        self.updated_at = datetime.now()
+
     def to_dict(self) -> dict:
         """Преобразует задачу в словарь"""
         return {
@@ -46,6 +52,7 @@ class Task:
             "description": self.description,
             "status": self.status,
             "priority": self.priority,
+            "deadline": self.deadline.isoformat() if self.deadline else None,
             "created_at": self.created_at.isoformat(),
             "updated_at": self.updated_at.isoformat()
         }
@@ -63,6 +70,12 @@ class Task:
 
         task.created_at = datetime.fromisoformat(created_str)
         task.updated_at = datetime.fromisoformat(updated_str)
+
+        # Обработка дедлайна
+        if data.get("deadline"):
+            deadline_str = data["deadline"].replace('Z', '+00:00')
+            task.deadline = datetime.fromisoformat(deadline_str)
+
         return task
 
     def __str__(self) -> str:
@@ -76,12 +89,25 @@ class Task:
             "medium": "🟡",
             "high": "🔴"
         }
+
+        # Формирование строки дедлайна с проверкой на просрочку
+        deadline_str = ""
+        if self.deadline:
+            # Убираем timezone информацию для сравнения
+            now = datetime.now()
+            deadline_naive = self.deadline.replace(tzinfo=None) if self.deadline.tzinfo else self.deadline
+            deadline_formatted = deadline_naive.strftime('%d.%m.%Y %H:%M')
+            if deadline_naive < now and self.status != "done":
+                deadline_str = f"\nДедлайн: {deadline_formatted} ⏰ ПРОСРОЧЕН!"
+            else:
+                deadline_str = f"\nДедлайн: {deadline_formatted}"
+
         return f"""
 ID: {self.id} {status_emoji.get(self.status, '❓')} {priority_emoji.get(self.priority, '⚪')}
 Название: {self.title}
 Описание: {self.description}
 Статус: {self.status}
-Приоритет: {self.priority}
+Приоритет: {self.priority}{deadline_str}
 Создано: {self.created_at.strftime('%d.%m.%Y %H:%M')}
 Обновлено: {self.updated_at.strftime('%d.%m.%Y %H:%M')}
 {'-' * 40}"""

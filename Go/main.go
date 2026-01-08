@@ -6,6 +6,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func main() {
@@ -25,7 +26,7 @@ func main() {
 		fmt.Println("\nКоманды:")
 		fmt.Println("1. list - показать все задачи")
 		fmt.Println("2. add - добавить задачу")
-		fmt.Println("3. update - обновить задачу (название, статус, приоритет)")
+		fmt.Println("3. update - обновить задачу (название, статус, приоритет, дедлайн)")
 		fmt.Println("4. delete - удалить задачу")
 		fmt.Println("5. filter - фильтровать задачи по статусу")
 		fmt.Println("6. search - поиск задач")
@@ -139,7 +140,8 @@ func updateTask(storage *Storage, reader *bufio.Reader) {
 	fmt.Println("1. Название и описание")
 	fmt.Println("2. Статус")
 	fmt.Println("3. Приоритет")
-	fmt.Println("4. Всё сразу")
+	fmt.Println("4. Дедлайн")
+	fmt.Println("5. Всё сразу")
 	fmt.Print("\nВыберите опцию: ")
 
 	optionStr, _ := reader.ReadString('\n')
@@ -212,6 +214,45 @@ func updateTask(storage *Storage, reader *bufio.Reader) {
 		task.UpdatePriority(priority)
 
 	case "4":
+		// Дедлайн
+		if task.Deadline != nil {
+			fmt.Printf("\nТекущий дедлайн: %s\n", task.Deadline.Format("02.01.2006 15:04"))
+		} else {
+			fmt.Println("\nДедлайн не установлен")
+		}
+		fmt.Println("Введите новый дедлайн в формате ДД.ММ.ГГГГ ЧЧ:ММ")
+		fmt.Println("Или просто ДД.ММ.ГГГГ (время будет 23:59)")
+		fmt.Println("Или оставьте пустым для удаления дедлайна")
+		fmt.Print("Дедлайн: ")
+
+		deadlineInput, _ := reader.ReadString('\n')
+		deadlineInput = strings.TrimSpace(deadlineInput)
+
+		if deadlineInput == "" {
+			task.UpdateDeadline(nil)
+		} else {
+			var deadline time.Time
+			var err error
+
+			// Пытаемся распарсить с временем
+			if strings.Contains(deadlineInput, " ") {
+				deadline, err = time.Parse("02.01.2006 15:04", deadlineInput)
+			} else {
+				// Если только дата, устанавливаем время 23:59
+				deadline, err = time.Parse("02.01.2006", deadlineInput)
+				if err == nil {
+					deadline = time.Date(deadline.Year(), deadline.Month(), deadline.Day(), 23, 59, 0, 0, time.Local)
+				}
+			}
+
+			if err != nil {
+				fmt.Println("Некорректный формат даты!")
+				return
+			}
+			task.UpdateDeadline(&deadline)
+		}
+
+	case "5":
 		// Название и описание
 		fmt.Printf("\nТекущее название: %s\n", task.Title)
 		fmt.Print("Новое название (Enter - оставить без изменений): ")
@@ -277,6 +318,42 @@ func updateTask(storage *Storage, reader *bufio.Reader) {
 				return
 			}
 			task.UpdatePriority(priority)
+		}
+
+		// Дедлайн
+		if task.Deadline != nil {
+			fmt.Printf("\nТекущий дедлайн: %s\n", task.Deadline.Format("02.01.2006 15:04"))
+		} else {
+			fmt.Println("\nДедлайн не установлен")
+		}
+		fmt.Println("Формат: ДД.ММ.ГГГГ ЧЧ:ММ или ДД.ММ.ГГГГ")
+		fmt.Print("Дедлайн (Enter - оставить без изменений): ")
+
+		deadlineInput, _ := reader.ReadString('\n')
+		deadlineInput = strings.TrimSpace(deadlineInput)
+
+		if deadlineInput != "" {
+			if strings.ToLower(deadlineInput) == "удалить" {
+				task.UpdateDeadline(nil)
+			} else {
+				var deadline time.Time
+				var err error
+
+				if strings.Contains(deadlineInput, " ") {
+					deadline, err = time.Parse("02.01.2006 15:04", deadlineInput)
+				} else {
+					deadline, err = time.Parse("02.01.2006", deadlineInput)
+					if err == nil {
+						deadline = time.Date(deadline.Year(), deadline.Month(), deadline.Day(), 23, 59, 0, 0, time.Local)
+					}
+				}
+
+				if err != nil {
+					fmt.Println("Некорректный формат даты! Дедлайн не обновлен.")
+				} else {
+					task.UpdateDeadline(&deadline)
+				}
+			}
 		}
 
 	default:
@@ -435,6 +512,17 @@ func printTask(task *Task) {
 	fmt.Printf("Описание: %s\n", task.Description)
 	fmt.Printf("Статус: %s\n", task.Status)
 	fmt.Printf("Приоритет: %s\n", task.Priority)
+
+	// Отображение дедлайна с проверкой на просрочку
+	if task.Deadline != nil {
+		deadlineFormatted := task.Deadline.Format("02.01.2006 15:04")
+		if task.Deadline.Before(time.Now()) && task.Status != "done" {
+			fmt.Printf("Дедлайн: %s ⏰ ПРОСРОЧЕН!\n", deadlineFormatted)
+		} else {
+			fmt.Printf("Дедлайн: %s\n", deadlineFormatted)
+		}
+	}
+
 	fmt.Printf("Создано: %s\n", task.CreatedAt.Format("02.01.2006 15:04"))
 	fmt.Printf("Обновлено: %s\n", task.UpdatedAt.Format("02.01.2006 15:04"))
 	fmt.Println(strings.Repeat("-", 40))
