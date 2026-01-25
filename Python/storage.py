@@ -78,6 +78,18 @@ class Storage:
             if query_lower in task.title.lower() or query_lower in task.description.lower()
         ]
 
+    def filter_tasks_by_tag(self, tag: str) -> List[Task]:
+        """Возвращает задачи с указанным тегом"""
+        tag_lower = tag.lower().strip()
+        return [task for task in self.tasks if tag_lower in task.tags]
+
+    def get_all_tags(self) -> List[str]:
+        """Возвращает список всех уникальных тегов"""
+        all_tags = set()
+        for task in self.tasks:
+            all_tags.update(task.tags)
+        return sorted(list(all_tags))
+
     def sort_tasks(self, sort_by: str) -> List[Task]:
         """Сортирует и возвращает задачи по указанному критерию"""
         tasks = self.tasks.copy()

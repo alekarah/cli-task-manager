@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 
 
 class Task:
@@ -12,6 +12,7 @@ class Task:
         self.status = "todo"  # todo, in_progress, done
         self.priority = "medium"  # low, medium, high
         self.deadline: Optional[datetime] = None
+        self.tags: List[str] = []
         self.created_at = datetime.now()
         self.updated_at = datetime.now()
 
@@ -44,6 +45,25 @@ class Task:
         self.deadline = deadline
         self.updated_at = datetime.now()
 
+    def add_tag(self, tag: str):
+        """Добавляет тег к задаче"""
+        tag = tag.strip().lower()
+        if tag and tag not in self.tags:
+            self.tags.append(tag)
+            self.updated_at = datetime.now()
+
+    def remove_tag(self, tag: str):
+        """Удаляет тег из задачи"""
+        tag = tag.strip().lower()
+        if tag in self.tags:
+            self.tags.remove(tag)
+            self.updated_at = datetime.now()
+
+    def set_tags(self, tags: List[str]):
+        """Устанавливает список тегов"""
+        self.tags = [t.strip().lower() for t in tags if t.strip()]
+        self.updated_at = datetime.now()
+
     def to_dict(self) -> dict:
         """Преобразует задачу в словарь"""
         return {
@@ -53,6 +73,7 @@ class Task:
             "status": self.status,
             "priority": self.priority,
             "deadline": self.deadline.isoformat() if self.deadline else None,
+            "tags": self.tags,
             "created_at": self.created_at.isoformat(),
             "updated_at": self.updated_at.isoformat()
         }
@@ -75,6 +96,9 @@ class Task:
         if data.get("deadline"):
             deadline_str = data["deadline"].replace('Z', '+00:00')
             task.deadline = datetime.fromisoformat(deadline_str)
+
+        # Обработка тегов
+        task.tags = data.get("tags", [])
 
         return task
 
@@ -102,12 +126,17 @@ class Task:
             else:
                 deadline_str = f"\nДедлайн: {deadline_formatted}"
 
+        # Формирование строки тегов
+        tags_str = ""
+        if self.tags:
+            tags_str = f"\nТеги: {', '.join(['#' + t for t in self.tags])}"
+
         return f"""
 ID: {self.id} {status_emoji.get(self.status, '❓')} {priority_emoji.get(self.priority, '⚪')}
 Название: {self.title}
 Описание: {self.description}
 Статус: {self.status}
-Приоритет: {self.priority}{deadline_str}
+Приоритет: {self.priority}{deadline_str}{tags_str}
 Создано: {self.created_at.strftime('%d.%m.%Y %H:%M')}
 Обновлено: {self.updated_at.strftime('%d.%m.%Y %H:%M')}
 {'-' * 40}"""

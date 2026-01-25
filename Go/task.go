@@ -1,6 +1,7 @@
 package main
 
 import (
+	"strings"
 	"time"
 )
 
@@ -12,6 +13,7 @@ type Task struct {
 	Status      string     `json:"status"`   // "todo", "in_progress", "done"
 	Priority    string     `json:"priority"` // "low", "medium", "high"
 	Deadline    *time.Time `json:"deadline,omitempty"`
+	Tags        []string   `json:"tags,omitempty"`
 	CreatedAt   time.Time  `json:"created_at"`
 	UpdatedAt   time.Time  `json:"updated_at"`
 }
@@ -56,5 +58,45 @@ func (t *Task) UpdatePriority(priority string) {
 // UpdateDeadline обновляет дедлайн задачи
 func (t *Task) UpdateDeadline(deadline *time.Time) {
 	t.Deadline = deadline
+	t.UpdatedAt = time.Now()
+}
+
+// AddTag добавляет тег к задаче
+func (t *Task) AddTag(tag string) {
+	tag = strings.TrimSpace(strings.ToLower(tag))
+	if tag == "" {
+		return
+	}
+	// Проверяем, что тег ещё не существует
+	for _, existingTag := range t.Tags {
+		if existingTag == tag {
+			return
+		}
+	}
+	t.Tags = append(t.Tags, tag)
+	t.UpdatedAt = time.Now()
+}
+
+// RemoveTag удаляет тег из задачи
+func (t *Task) RemoveTag(tag string) {
+	tag = strings.TrimSpace(strings.ToLower(tag))
+	for i, existingTag := range t.Tags {
+		if existingTag == tag {
+			t.Tags = append(t.Tags[:i], t.Tags[i+1:]...)
+			t.UpdatedAt = time.Now()
+			return
+		}
+	}
+}
+
+// SetTags устанавливает список тегов
+func (t *Task) SetTags(tags []string) {
+	t.Tags = make([]string, 0)
+	for _, tag := range tags {
+		tag = strings.TrimSpace(strings.ToLower(tag))
+		if tag != "" {
+			t.Tags = append(t.Tags, tag)
+		}
+	}
 	t.UpdatedAt = time.Now()
 }

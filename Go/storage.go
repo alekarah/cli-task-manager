@@ -122,6 +122,39 @@ func (s *Storage) SearchTasks(query string) []*Task {
 	return results
 }
 
+// FilterTasksByTag возвращает задачи с указанным тегом
+func (s *Storage) FilterTasksByTag(tag string) []*Task {
+	filtered := make([]*Task, 0)
+	tagLower := strings.TrimSpace(strings.ToLower(tag))
+
+	for _, task := range s.Tasks {
+		for _, t := range task.Tags {
+			if t == tagLower {
+				filtered = append(filtered, task)
+				break
+			}
+		}
+	}
+	return filtered
+}
+
+// GetAllTags возвращает список всех уникальных тегов
+func (s *Storage) GetAllTags() []string {
+	tagsMap := make(map[string]bool)
+	for _, task := range s.Tasks {
+		for _, tag := range task.Tags {
+			tagsMap[tag] = true
+		}
+	}
+
+	tags := make([]string, 0, len(tagsMap))
+	for tag := range tagsMap {
+		tags = append(tags, tag)
+	}
+	sort.Strings(tags)
+	return tags
+}
+
 // SortTasks сортирует и возвращает задачи по указанному критерию
 func (s *Storage) SortTasks(sortBy string) []*Task {
 	tasks := make([]*Task, len(s.Tasks))

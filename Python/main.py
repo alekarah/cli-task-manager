@@ -79,7 +79,8 @@ def update_task(storage: Storage):
     print("2. Статус")
     print("3. Приоритет")
     print("4. Дедлайн")
-    print("5. Всё сразу")
+    print("5. Теги")
+    print("6. Всё сразу")
 
     option = input("\nВыберите опцию: ").strip()
 
@@ -147,6 +148,22 @@ def update_task(storage: Storage):
                 return
 
     elif option == "5":
+        # Теги
+        if task.tags:
+            print(f"\nТекущие теги: {', '.join(['#' + t for t in task.tags])}")
+        else:
+            print("\nТеги не установлены")
+        print("Введите теги через запятую (например: работа, срочно, проект)")
+        print("Или оставьте пустым для удаления всех тегов")
+        tags_input = input("Теги: ").strip()
+
+        if not tags_input:
+            task.set_tags([])
+        else:
+            tags = [t.strip() for t in tags_input.split(",")]
+            task.set_tags(tags)
+
+    elif option == "6":
         # Название и описание
         print(f"\nТекущее название: {task.title}")
         title = input("Новое название (Enter - оставить): ").strip()
@@ -198,6 +215,20 @@ def update_task(storage: Storage):
                 except ValueError:
                     print("Некорректный формат даты! Дедлайн не обновлен.")
 
+        # Теги
+        if task.tags:
+            print(f"\nТекущие теги: {', '.join(['#' + t for t in task.tags])}")
+        else:
+            print("\nТеги не установлены")
+        print("Введите теги через запятую (Enter - оставить, 'удалить' - очистить)")
+        tags_input = input("Теги: ").strip()
+        if tags_input:
+            if tags_input.lower() == "удалить":
+                task.set_tags([])
+            else:
+                tags = [t.strip() for t in tags_input.split(",")]
+                task.set_tags(tags)
+
     else:
         print("Некорректная опция!")
         return
@@ -207,37 +238,75 @@ def update_task(storage: Storage):
 
 
 def filter_tasks(storage: Storage):
-    """Фильтрует задачи по статусу"""
-    print("\nДоступные статусы:")
-    print("1. todo - К выполнению")
-    print("2. in_progress - В процессе")
-    print("3. done - Выполнено")
+    """Фильтрует задачи по статусу или тегу"""
+    print("\nФильтровать по:")
+    print("1. Статусу")
+    print("2. Тегу")
 
-    status_input = input("\nВыберите статус для фильтрации: ").strip()
+    filter_type = input("\nВыберите тип фильтрации: ").strip()
 
-    status_map = {
-        "1": "todo",
-        "2": "in_progress",
-        "3": "done",
-        "todo": "todo",
-        "in_progress": "in_progress",
-        "done": "done"
-    }
+    if filter_type == "1":
+        # Фильтрация по статусу
+        print("\nДоступные статусы:")
+        print("1. todo - К выполнению")
+        print("2. in_progress - В процессе")
+        print("3. done - Выполнено")
 
-    status = status_map.get(status_input)
-    if not status:
-        print("Некорректный статус!")
-        return
+        status_input = input("\nВыберите статус: ").strip()
 
-    tasks = storage.filter_tasks_by_status(status)
+        status_map = {
+            "1": "todo",
+            "2": "in_progress",
+            "3": "done",
+            "todo": "todo",
+            "in_progress": "in_progress",
+            "done": "done"
+        }
 
-    if not tasks:
-        print(f"\nЗадач со статусом '{status}' не найдено!")
-        return
+        status = status_map.get(status_input)
+        if not status:
+            print("Некорректный статус!")
+            return
 
-    print(f"\n=== Задачи со статусом '{status}' ===")
-    for task in tasks:
-        print(task)
+        tasks = storage.filter_tasks_by_status(status)
+
+        if not tasks:
+            print(f"\nЗадач со статусом '{status}' не найдено!")
+            return
+
+        print(f"\n=== Задачи со статусом '{status}' ===")
+        for task in tasks:
+            print(task)
+
+    elif filter_type == "2":
+        # Фильтрация по тегу
+        all_tags = storage.get_all_tags()
+        if all_tags:
+            print(f"\nДоступные теги: {', '.join(['#' + t for t in all_tags])}")
+        else:
+            print("\nТеги не найдены в задачах!")
+            return
+
+        tag_input = input("Введите тег для фильтрации: ").strip()
+        if not tag_input:
+            print("Тег не может быть пустым!")
+            return
+
+        # Убираем # если пользователь его ввел
+        tag_input = tag_input.lstrip('#')
+
+        tasks = storage.filter_tasks_by_tag(tag_input)
+
+        if not tasks:
+            print(f"\nЗадач с тегом '#{tag_input}' не найдено!")
+            return
+
+        print(f"\n=== Задачи с тегом '#{tag_input}' ===")
+        for task in tasks:
+            print(task)
+
+    else:
+        print("Некорректная опция!")
 
 
 def search_tasks(storage: Storage):

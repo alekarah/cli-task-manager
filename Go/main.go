@@ -141,7 +141,8 @@ func updateTask(storage *Storage, reader *bufio.Reader) {
 	fmt.Println("2. Статус")
 	fmt.Println("3. Приоритет")
 	fmt.Println("4. Дедлайн")
-	fmt.Println("5. Всё сразу")
+	fmt.Println("5. Теги")
+	fmt.Println("6. Всё сразу")
 	fmt.Print("\nВыберите опцию: ")
 
 	optionStr, _ := reader.ReadString('\n')
@@ -253,6 +254,31 @@ func updateTask(storage *Storage, reader *bufio.Reader) {
 		}
 
 	case "5":
+		// Теги
+		if len(task.Tags) > 0 {
+			tagStrings := make([]string, len(task.Tags))
+			for i, tag := range task.Tags {
+				tagStrings[i] = "#" + tag
+			}
+			fmt.Printf("\nТекущие теги: %s\n", strings.Join(tagStrings, ", "))
+		} else {
+			fmt.Println("\nТеги не установлены")
+		}
+		fmt.Println("Введите теги через запятую (например: работа, срочно, проект)")
+		fmt.Println("Или оставьте пустым для удаления всех тегов")
+		fmt.Print("Теги: ")
+
+		tagsInput, _ := reader.ReadString('\n')
+		tagsInput = strings.TrimSpace(tagsInput)
+
+		if tagsInput == "" {
+			task.SetTags([]string{})
+		} else {
+			tags := strings.Split(tagsInput, ",")
+			task.SetTags(tags)
+		}
+
+	case "6":
 		// Название и описание
 		fmt.Printf("\nТекущее название: %s\n", task.Title)
 		fmt.Print("Новое название (Enter - оставить без изменений): ")
@@ -356,6 +382,31 @@ func updateTask(storage *Storage, reader *bufio.Reader) {
 			}
 		}
 
+		// Теги
+		if len(task.Tags) > 0 {
+			tagStrings := make([]string, len(task.Tags))
+			for i, tag := range task.Tags {
+				tagStrings[i] = "#" + tag
+			}
+			fmt.Printf("\nТекущие теги: %s\n", strings.Join(tagStrings, ", "))
+		} else {
+			fmt.Println("\nТеги не установлены")
+		}
+		fmt.Println("Введите теги через запятую (Enter - оставить, 'удалить' - очистить)")
+		fmt.Print("Теги: ")
+
+		tagsInput, _ := reader.ReadString('\n')
+		tagsInput = strings.TrimSpace(tagsInput)
+
+		if tagsInput != "" {
+			if strings.ToLower(tagsInput) == "удалить" {
+				task.SetTags([]string{})
+			} else {
+				tags := strings.Split(tagsInput, ",")
+				task.SetTags(tags)
+			}
+		}
+
 	default:
 		fmt.Println("Некорректная опция!")
 		return
@@ -370,38 +421,90 @@ func updateTask(storage *Storage, reader *bufio.Reader) {
 }
 
 func filterTasks(storage *Storage, reader *bufio.Reader) {
-	fmt.Println("\nДоступные статусы:")
-	fmt.Println("1. todo - К выполнению")
-	fmt.Println("2. in_progress - В процессе")
-	fmt.Println("3. done - Выполнено")
-	fmt.Print("\nВыберите статус для фильтрации: ")
+	fmt.Println("\nФильтровать по:")
+	fmt.Println("1. Статусу")
+	fmt.Println("2. Тегу")
+	fmt.Print("\nВыберите тип фильтрации: ")
 
-	statusInput, _ := reader.ReadString('\n')
-	statusInput = strings.TrimSpace(statusInput)
+	filterType, _ := reader.ReadString('\n')
+	filterType = strings.TrimSpace(filterType)
 
-	var status string
-	switch statusInput {
-	case "1", "todo":
-		status = "todo"
-	case "2", "in_progress":
-		status = "in_progress"
-	case "3", "done":
-		status = "done"
-	default:
-		fmt.Println("Некорректный статус!")
-		return
-	}
+	if filterType == "1" {
+		// Фильтрация по статусу
+		fmt.Println("\nДоступные статусы:")
+		fmt.Println("1. todo - К выполнению")
+		fmt.Println("2. in_progress - В процессе")
+		fmt.Println("3. done - Выполнено")
+		fmt.Print("\nВыберите статус: ")
 
-	tasks := storage.FilterTasksByStatus(status)
+		statusInput, _ := reader.ReadString('\n')
+		statusInput = strings.TrimSpace(statusInput)
 
-	if len(tasks) == 0 {
-		fmt.Printf("\nЗадач со статусом '%s' не найдено!\n", status)
-		return
-	}
+		var status string
+		switch statusInput {
+		case "1", "todo":
+			status = "todo"
+		case "2", "in_progress":
+			status = "in_progress"
+		case "3", "done":
+			status = "done"
+		default:
+			fmt.Println("Некорректный статус!")
+			return
+		}
 
-	fmt.Printf("\n=== Задачи со статусом '%s' ===\n", status)
-	for _, task := range tasks {
-		printTask(task)
+		tasks := storage.FilterTasksByStatus(status)
+
+		if len(tasks) == 0 {
+			fmt.Printf("\nЗадач со статусом '%s' не найдено!\n", status)
+			return
+		}
+
+		fmt.Printf("\n=== Задачи со статусом '%s' ===\n", status)
+		for _, task := range tasks {
+			printTask(task)
+		}
+
+	} else if filterType == "2" {
+		// Фильтрация по тегу
+		allTags := storage.GetAllTags()
+		if len(allTags) > 0 {
+			tagStrings := make([]string, len(allTags))
+			for i, tag := range allTags {
+				tagStrings[i] = "#" + tag
+			}
+			fmt.Printf("\nДоступные теги: %s\n", strings.Join(tagStrings, ", "))
+		} else {
+			fmt.Println("\nТеги не найдены в задачах!")
+			return
+		}
+
+		fmt.Print("Введите тег для фильтрации: ")
+		tagInput, _ := reader.ReadString('\n')
+		tagInput = strings.TrimSpace(tagInput)
+
+		if tagInput == "" {
+			fmt.Println("Тег не может быть пустым!")
+			return
+		}
+
+		// Убираем # если пользователь его ввел
+		tagInput = strings.TrimPrefix(tagInput, "#")
+
+		tasks := storage.FilterTasksByTag(tagInput)
+
+		if len(tasks) == 0 {
+			fmt.Printf("\nЗадач с тегом '#%s' не найдено!\n", tagInput)
+			return
+		}
+
+		fmt.Printf("\n=== Задачи с тегом '#%s' ===\n", tagInput)
+		for _, task := range tasks {
+			printTask(task)
+		}
+
+	} else {
+		fmt.Println("Некорректная опция!")
 	}
 }
 
@@ -521,6 +624,15 @@ func printTask(task *Task) {
 		} else {
 			fmt.Printf("Дедлайн: %s\n", deadlineFormatted)
 		}
+	}
+
+	// Отображение тегов
+	if len(task.Tags) > 0 {
+		tagStrings := make([]string, len(task.Tags))
+		for i, tag := range task.Tags {
+			tagStrings[i] = "#" + tag
+		}
+		fmt.Printf("Теги: %s\n", strings.Join(tagStrings, ", "))
 	}
 
 	fmt.Printf("Создано: %s\n", task.CreatedAt.Format("02.01.2006 15:04"))
