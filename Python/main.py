@@ -377,6 +377,42 @@ def sort_tasks(storage: Storage):
         print(task)
 
 
+def export_tasks(storage: Storage):
+    """Экспортирует задачи в файл"""
+    print("\nВыберите формат экспорта:")
+    print("1. CSV")
+    print("2. Markdown")
+
+    format_input = input("\nВыберите формат: ").strip()
+
+    if format_input == "1":
+        filename = input("Введите имя файла (Enter - tasks.csv): ").strip()
+        if not filename:
+            filename = "tasks.csv"
+        elif not filename.endswith('.csv'):
+            filename += '.csv'
+
+        if storage.export_to_csv(filename):
+            print(f"\n✓ Задачи успешно экспортированы в {filename}")
+        else:
+            print("\nОшибка экспорта!")
+
+    elif format_input == "2":
+        filename = input("Введите имя файла (Enter - tasks.md): ").strip()
+        if not filename:
+            filename = "tasks.md"
+        elif not filename.endswith('.md'):
+            filename += '.md'
+
+        if storage.export_to_markdown(filename):
+            print(f"\n✓ Задачи успешно экспортированы в {filename}")
+        else:
+            print("\nОшибка экспорта!")
+
+    else:
+        print("Некорректный формат!")
+
+
 def main():
     """Основная функция программы"""
     storage = Storage()
@@ -399,22 +435,25 @@ def main():
         "6": search_tasks,
         "sort": sort_tasks,
         "7": sort_tasks,
+        "export": export_tasks,
+        "8": export_tasks,
     }
 
     while True:
         print("\nКоманды:")
         print("1. list - показать все задачи")
         print("2. add - добавить задачу")
-        print("3. update - обновить задачу (название, статус, приоритет, дедлайн)")
+        print("3. update - обновить задачу (название, статус, приоритет, дедлайн, теги)")
         print("4. delete - удалить задачу")
-        print("5. filter - фильтровать задачи по статусу")
+        print("5. filter - фильтровать задачи по статусу или тегам")
         print("6. search - поиск задач")
         print("7. sort - сортировать задачи")
-        print("8. exit - выход")
+        print("8. export - экспортировать задачи")
+        print("9. exit - выход")
 
         command = input("\nВведите команду: ").strip()
 
-        if command in ["exit", "8"]:
+        if command in ["exit", "9"]:
             print("До свидания!")
             break
 

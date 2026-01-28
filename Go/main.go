@@ -26,12 +26,13 @@ func main() {
 		fmt.Println("\nКоманды:")
 		fmt.Println("1. list - показать все задачи")
 		fmt.Println("2. add - добавить задачу")
-		fmt.Println("3. update - обновить задачу (название, статус, приоритет, дедлайн)")
+		fmt.Println("3. update - обновить задачу (название, статус, приоритет, дедлайн, теги)")
 		fmt.Println("4. delete - удалить задачу")
-		fmt.Println("5. filter - фильтровать задачи по статусу")
+		fmt.Println("5. filter - фильтровать задачи по статусу или тегам")
 		fmt.Println("6. search - поиск задач")
 		fmt.Println("7. sort - сортировать задачи")
-		fmt.Println("8. exit - выход")
+		fmt.Println("8. export - экспортировать задачи")
+		fmt.Println("9. exit - выход")
 		fmt.Print("\nВведите команду: ")
 
 		command, _ := reader.ReadString('\n')
@@ -52,7 +53,9 @@ func main() {
 			searchTasks(storage, reader)
 		case "sort", "7":
 			sortTasks(storage, reader)
-		case "exit", "8":
+		case "export", "8":
+			exportTasks(storage, reader)
+		case "exit", "9":
 			fmt.Println("До свидания!")
 			return
 		default:
@@ -578,6 +581,56 @@ func sortTasks(storage *Storage, reader *bufio.Reader) {
 	fmt.Printf("\n=== Задачи, отсортированные по %s ===\n", sortNames[sortBy])
 	for _, task := range tasks {
 		printTask(task)
+	}
+}
+
+func exportTasks(storage *Storage, reader *bufio.Reader) {
+	fmt.Println("\nВыберите формат экспорта:")
+	fmt.Println("1. CSV")
+	fmt.Println("2. Markdown")
+	fmt.Print("\nВыберите формат: ")
+
+	formatInput, _ := reader.ReadString('\n')
+	formatInput = strings.TrimSpace(formatInput)
+
+	if formatInput == "1" {
+		fmt.Print("Введите имя файла (Enter - tasks.csv): ")
+		filename, _ := reader.ReadString('\n')
+		filename = strings.TrimSpace(filename)
+
+		if filename == "" {
+			filename = "tasks.csv"
+		} else if !strings.HasSuffix(filename, ".csv") {
+			filename += ".csv"
+		}
+
+		if err := storage.ExportToCSV(filename); err != nil {
+			fmt.Printf("\nОшибка экспорта: %v\n", err)
+			return
+		}
+
+		fmt.Printf("\n✓ Задачи успешно экспортированы в %s\n", filename)
+
+	} else if formatInput == "2" {
+		fmt.Print("Введите имя файла (Enter - tasks.md): ")
+		filename, _ := reader.ReadString('\n')
+		filename = strings.TrimSpace(filename)
+
+		if filename == "" {
+			filename = "tasks.md"
+		} else if !strings.HasSuffix(filename, ".md") {
+			filename += ".md"
+		}
+
+		if err := storage.ExportToMarkdown(filename); err != nil {
+			fmt.Printf("\nОшибка экспорта: %v\n", err)
+			return
+		}
+
+		fmt.Printf("\n✓ Задачи успешно экспортированы в %s\n", filename)
+
+	} else {
+		fmt.Println("Некорректный формат!")
 	}
 }
 

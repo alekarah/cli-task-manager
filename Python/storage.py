@@ -1,5 +1,6 @@
 import json
 import os
+import csv
 from typing import List, Optional
 from task import Task
 
@@ -107,3 +108,82 @@ class Storage:
             tasks.sort(key=lambda t: priority_order.get(t.priority, 2))
 
         return tasks
+
+    def export_to_csv(self, filename: str = "tasks.csv") -> bool:
+        """Экспортирует задачи в CSV файл"""
+        try:
+            with open(filename, 'w', encoding='utf-8', newline='') as f:
+                writer = csv.writer(f)
+                # Заголовки
+                writer.writerow(['ID', 'Название', 'Описание', 'Статус', 'Приоритет',
+                                'Дедлайн', 'Теги', 'Создано', 'Обновлено'])
+
+                # Данные
+                for task in self.tasks:
+                    deadline_str = task.deadline.strftime('%d.%m.%Y %H:%M') if task.deadline else ''
+                    tags_str = ', '.join(['#' + t for t in task.tags]) if task.tags else ''
+
+                    writer.writerow([
+                        task.id,
+                        task.title,
+                        task.description,
+                        task.status,
+                        task.priority,
+                        deadline_str,
+                        tags_str,
+                        task.created_at.strftime('%d.%m.%Y %H:%M'),
+                        task.updated_at.strftime('%d.%m.%Y %H:%M')
+                    ])
+            return True
+        except Exception as e:
+            print(f"Ошибка экспорта в CSV: {e}")
+            return False
+
+    def export_to_markdown(self, filename: str = "tasks.md") -> bool:
+        """Экспортирует задачи в Markdown файл"""
+        try:
+            with open(filename, 'w', encoding='utf-8') as f:
+                f.write("# Список задач\n\n")
+
+                if not self.tasks:
+                    f.write("*Задач нет*\n")
+                    return True
+
+                # Группируем по статусу
+                statuses = {
+                    "todo": "📋 К выполнению",
+                    "in_progress": "⚙️ В процессе",
+                    "done": "✅ Выполнено"
+                }
+
+                for status, status_name in statuses.items():
+                    status_tasks = [t for t in self.tasks if t.status == status]
+                    if status_tasks:
+                        f.write(f"## {status_name}\n\n")
+                        for task in status_tasks:
+                            # Приоритет
+                            priority_emoji = {"low": "🟢", "medium": "🟡", "high": "🔴"}
+                            priority_str = priority_emoji.get(task.priority, "⚪")
+
+                            f.write(f"### {priority_str} {task.title}\n\n")
+                            f.write(f"**ID:** {task.id}  \n")
+                            f.write(f"**Описание:** {task.description}  \n")
+                            f.write(f"**Приоритет:** {task.priority}  \n")
+
+                            # Дедлайн
+                            if task.deadline:
+                                deadline_str = task.deadline.strftime('%d.%m.%Y %H:%M')
+                                f.write(f"**Дедлайн:** {deadline_str}  \n")
+
+                            # Теги
+                            if task.tags:
+                                tags_str = ', '.join(['`#' + t + '`' for t in task.tags])
+                                f.write(f"**Теги:** {tags_str}  \n")
+
+                            f.write(f"**Создано:** {task.created_at.strftime('%d.%m.%Y %H:%M')}  \n")
+                            f.write(f"**Обновлено:** {task.updated_at.strftime('%d.%m.%Y %H:%M')}  \n")
+                            f.write("\n---\n\n")
+            return True
+        except Exception as e:
+            print(f"Ошибка экспорта в Markdown: {e}")
+            return False

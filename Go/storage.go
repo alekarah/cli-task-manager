@@ -186,3 +186,132 @@ func (s *Storage) SortTasks(sortBy string) []*Task {
 
 	return tasks
 }
+
+// ExportToCSV экспортирует задачи в CSV файл
+func (s *Storage) ExportToCSV(filename string) error {
+	file, err := os.Create(filename)
+	if err != nil {
+		return fmt.Errorf("ошибка создания файла: %w", err)
+	}
+	defer file.Close()
+
+	// Записываем BOM для корректного отображения UTF-8 в Excel
+	file.WriteString("\xEF\xBB\xBF")
+
+	// Заголовки
+	fmt.Fprintln(file, "ID,Название,Описание,Статус,Приоритет,Дедлайн,Теги,Создано,Обновлено")
+
+	// Данные
+	for _, task := range s.Tasks {
+		deadlineStr := ""
+		if task.Deadline != nil {
+			deadlineStr = task.Deadline.Format("02.01.2006 15:04")
+		}
+
+		tagsStr := ""
+		if len(task.Tags) > 0 {
+			tagStrings := make([]string, len(task.Tags))
+			for i, tag := range task.Tags {
+				tagStrings[i] = "#" + tag
+			}
+			tagsStr = strings.Join(tagStrings, ", ")
+		}
+
+		// Экранируем значения для CSV
+		fmt.Fprintf(file, "%d,\"%s\",\"%s\",%s,%s,\"%s\",\"%s\",\"%s\",\"%s\"\n",
+			task.ID,
+			escapeCSV(task.Title),
+			escapeCSV(task.Description),
+			task.Status,
+			task.Priority,
+			deadlineStr,
+			tagsStr,
+			task.CreatedAt.Format("02.01.2006 15:04"),
+			task.UpdatedAt.Format("02.01.2006 15:04"),
+		)
+	}
+
+	return nil
+}
+
+// ExportToMarkdown экспортирует задачи в Markdown файл
+func (s *Storage) ExportToMarkdown(filename string) error {
+	file, err := os.Create(filename)
+	if err != nil {
+		return fmt.Errorf("ошибка создания файла: %w", err)
+	}
+	defer file.Close()
+
+	fmt.Fprintln(file, "# Список задач\n")
+
+	if len(s.Tasks) == 0 {
+		fmt.Fprintln(file, "*Задач нет*")
+		return nil
+	}
+
+	// Группируем по статусу
+	statuses := []struct {
+		key  string
+		name string
+	}{
+		{"todo", "📋 К выполнению"},
+		{"in_progress", "⚙️ В процессе"},
+		{"done", "✅ Выполнено"},
+	}
+
+	for _, status := range statuses {
+		statusTasks := make([]*Task, 0)
+		for _, task := range s.Tasks {
+			if task.Status == status.key {
+				statusTasks = append(statusTasks, task)
+			}
+		}
+
+		if len(statusTasks) > 0 {
+			fmt.Fprintf(file, "## %s\n\n", status.name)
+
+			for _, task := range statusTasks {
+				// Приоритет
+				priorityEmoji := map[string]string{
+					"low":    "🟢",
+					"medium": "🟡",
+					"high":   "🔴",
+				}
+				priority := priorityEmoji[task.Priority]
+				if priority == "" {
+					priority = "⚪"
+				}
+
+				fmt.Fprintf(file, "### %s %s\n\n", priority, task.Title)
+				fmt.Fprintf(file, "**ID:** %d  \n", task.ID)
+				fmt.Fprintf(file, "**Описание:** %s  \n", task.Description)
+				fmt.Fprintf(file, "**Приоритет:** %s  \n", task.Priority)
+
+				// Дедлайн
+				if task.Deadline != nil {
+					fmt.Fprintf(file, "**Дедлайн:** %s  \n", task.Deadline.Format("02.01.2006 15:04"))
+				}
+
+				// Теги
+				if len(task.Tags) > 0 {
+					tagStrings := make([]string, len(task.Tags))
+					for i, tag := range task.Tags {
+						tagStrings[i] = "`#" + tag + "`"
+					}
+					fmt.Fprintf(file, "**Теги:** %s  \n", strings.Join(tagStrings, ", "))
+				}
+
+				fmt.Fprintf(file, "**Создано:** %s  \n", task.CreatedAt.Format("02.01.2006 15:04"))
+				fmt.Fprintf(file, "**Обновлено:** %s  \n", task.UpdatedAt.Format("02.01.2006 15:04"))
+				fmt.Fprintln(file, "\n---\n")
+			}
+		}
+	}
+
+	return nil
+}
+
+// escapeCSV экранирует кавычки в строке для CSV
+func escapeCSV(s string) string {
+	return strings.ReplaceAll(s, "\"", "\"\"")
+}
