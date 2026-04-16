@@ -242,7 +242,7 @@ func (s *Storage) ExportToMarkdown(filename string) error {
 	}
 	defer file.Close()
 
-	fmt.Fprintln(file, "# Список задач\n")
+	fmt.Fprintf(file, "# Список задач\n\n")
 
 	if len(s.Tasks) == 0 {
 		fmt.Fprintln(file, "*Задач нет*")
@@ -303,7 +303,7 @@ func (s *Storage) ExportToMarkdown(filename string) error {
 
 				fmt.Fprintf(file, "**Создано:** %s  \n", task.CreatedAt.Format("02.01.2006 15:04"))
 				fmt.Fprintf(file, "**Обновлено:** %s  \n", task.UpdatedAt.Format("02.01.2006 15:04"))
-				fmt.Fprintln(file, "\n---\n")
+				fmt.Fprintf(file, "\n---\n\n")
 			}
 		}
 	}

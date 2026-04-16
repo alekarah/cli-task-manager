@@ -28,6 +28,8 @@ cli-task-manager/
 │   ├── main.go
 │   ├── task.go
 │   ├── storage.go
+│   ├── task_test.go         # Юнит-тесты для task.go
+│   ├── storage_test.go      # Юнит-тесты для storage.go
 │   ├── go.mod
 │   └── README.md
 │
@@ -35,6 +37,8 @@ cli-task-manager/
 │   ├── main.py
 │   ├── task.py
 │   ├── storage.py
+│   ├── test_task.py         # Юнит-тесты для task.py
+│   ├── test_storage.py      # Юнит-тесты для storage.py
 │   └── README.md
 │
 ├── populate_test_data.sh    # Скрипт для заполнения тестовыми данными
@@ -132,6 +136,7 @@ bash populate_test_data.sh
 - [x] Установка дедлайнов
 - [x] Добавление тегов/категорий
 - [x] Экспорт в другие форматы (CSV, Markdown)
+- [x] Юнит-тесты для Go и Python реализаций
 - [ ] Web-интерфейс
 - [ ] REST API
 - [ ] База данных вместо JSON
