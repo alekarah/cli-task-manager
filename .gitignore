@@ -28,3 +28,6 @@ Python/.venv
 # OS
 .DS_Store
 Thumbs.db
+
+# Личные заметки
+notes/
