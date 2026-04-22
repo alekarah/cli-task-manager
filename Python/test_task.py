@@ -55,6 +55,11 @@ class TestUpdateFields(unittest.TestCase):
         self.assertEqual(self.task.title, "T")
         self.assertEqual(self.task.description, "D")
 
+    def test_update_updates_updated_at(self):
+        before = self.task.updated_at
+        self.task.update(title="New")
+        self.assertGreaterEqual(self.task.updated_at, before)
+
     def test_empty_string_does_not_overwrite(self):
         self.task.update(title="", description="")
         self.assertEqual(self.task.title, "Old Title")
@@ -89,6 +94,11 @@ class TestDeadline(unittest.TestCase):
         self.task.update_deadline(None)
         self.assertIsNone(self.task.deadline)
 
+    def test_update_deadline_updates_updated_at(self):
+        before = self.task.updated_at
+        self.task.update_deadline(datetime(2026, 6, 1))
+        self.assertGreaterEqual(self.task.updated_at, before)
+
 
 class TestTags(unittest.TestCase):
     def setUp(self):
@@ -119,6 +129,11 @@ class TestTags(unittest.TestCase):
     def test_remove_tag(self):
         self.task.add_tag("api")
         self.task.remove_tag("api")
+        self.assertNotIn("api", self.task.tags)
+
+    def test_remove_tag_case_insensitive(self):
+        self.task.add_tag("api")
+        self.task.remove_tag("API")
         self.assertNotIn("api", self.task.tags)
 
     def test_remove_nonexistent_tag(self):
@@ -187,6 +202,24 @@ class TestSerialization(unittest.TestCase):
         }
         task = Task.from_dict(data)
         self.assertIsNone(task.deadline)
+
+    def test_from_dict_with_tags(self):
+        data = {
+            "id": 3, "title": "T", "description": "D",
+            "status": "todo", "priority": "medium",
+            "tags": ["api", "backend"],
+            "created_at": "2026-01-01T00:00:00",
+            "updated_at": "2026-01-01T00:00:00"
+        }
+        task = Task.from_dict(data)
+        self.assertEqual(task.tags, ["api", "backend"])
+
+    def test_to_dict_deadline_is_string(self):
+        self.task = Task(1, "T", "D")
+        self.task.update_deadline(datetime(2026, 6, 15, 12, 0))
+        data = self.task.to_dict()
+        self.assertIsInstance(data["deadline"], str)
+        self.assertIn("2026-06-15", data["deadline"])
 
 
 if __name__ == "__main__":

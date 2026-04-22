@@ -157,6 +157,18 @@ func TestFilterTasksByTagCaseInsensitive(t *testing.T) {
 	}
 }
 
+func TestFilterTasksByTagMultipleMatches(t *testing.T) {
+	s := NewStorage()
+	t1 := s.AddTask("A", "a")
+	t1.AddTag("devops")
+	t2 := s.AddTask("B", "b")
+	t2.AddTag("devops")
+	result := s.FilterTasksByTag("devops")
+	if len(result) != 2 {
+		t.Errorf("expected 2 matches, got %d", len(result))
+	}
+}
+
 func TestGetAllTags(t *testing.T) {
 	s := NewStorage()
 	t1 := s.AddTask("A", "a")
@@ -224,6 +236,22 @@ func TestSortTasksByUpdatedReversed(t *testing.T) {
 	}
 }
 
+func TestSortTasksByCreated(t *testing.T) {
+	s := NewStorage()
+	s.AddTask("A", "a")
+	time.Sleep(time.Millisecond)
+	s.AddTask("B", "b")
+	time.Sleep(time.Millisecond)
+	s.AddTask("C", "c")
+
+	result := s.SortTasks("created")
+	for i := 1; i < len(result); i++ {
+		if result[i].CreatedAt.Before(result[i-1].CreatedAt) {
+			t.Errorf("tasks not sorted by created at index %d", i)
+		}
+	}
+}
+
 func TestSortDoesNotMutateOriginal(t *testing.T) {
 	s := NewStorage()
 	s.AddTask("A", "a")
@@ -286,6 +314,13 @@ func TestSaveAndLoad(t *testing.T) {
 	}
 }
 
+func TestListTasksEmpty(t *testing.T) {
+	s := NewStorage()
+	if len(s.ListTasks()) != 0 {
+		t.Error("expected empty list for new storage")
+	}
+}
+
 func TestExportToCSV(t *testing.T) {
 	f, err := os.CreateTemp("", "export_*.csv")
 	if err != nil {
@@ -314,6 +349,36 @@ func TestExportToCSV(t *testing.T) {
 	// BOM + header expected
 	if content[3:5] != "ID" {
 		t.Errorf("expected header starting with ID (after BOM), got %q", content[:20])
+	}
+}
+
+func TestExportToCSVDataRowContent(t *testing.T) {
+	f, err := os.CreateTemp("", "export_data_*.csv")
+	if err != nil {
+		t.Fatal(err)
+	}
+	f.Close()
+	tmpFile := f.Name()
+	defer os.Remove(tmpFile)
+
+	s := NewStorage()
+	t1 := s.AddTask("My Task", "My Desc")
+	t1.AddTag("api")
+
+	if err := s.ExportToCSV(tmpFile); err != nil {
+		t.Fatal(err)
+	}
+
+	data, _ := os.ReadFile(tmpFile)
+	content := string(data)
+	if !containsString(content, "My Task") {
+		t.Error("expected task title in CSV")
+	}
+	if !containsString(content, "#api") {
+		t.Error("expected #api tag in CSV")
+	}
+	if !containsString(content, "1,") {
+		t.Error("expected task ID=1 in CSV")
 	}
 }
 

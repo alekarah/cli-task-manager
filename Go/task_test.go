@@ -99,6 +99,27 @@ func TestUpdateDeadline(t *testing.T) {
 	}
 }
 
+func TestUpdateDeadlineUpdatesTimestamp(t *testing.T) {
+	task := NewTask(1, "T", "D")
+	before := task.UpdatedAt
+	time.Sleep(time.Millisecond)
+	dl := time.Date(2026, 6, 1, 0, 0, 0, 0, time.UTC)
+	task.UpdateDeadline(&dl)
+	if !task.UpdatedAt.After(before) {
+		t.Error("UpdatedAt should be updated after UpdateDeadline")
+	}
+}
+
+func TestSetTagsUpdatesTimestamp(t *testing.T) {
+	task := NewTask(1, "T", "D")
+	before := task.UpdatedAt
+	time.Sleep(time.Millisecond)
+	task.SetTags([]string{"x", "y"})
+	if !task.UpdatedAt.After(before) {
+		t.Error("UpdatedAt should be updated after SetTags")
+	}
+}
+
 func TestAddTag(t *testing.T) {
 	task := NewTask(1, "T", "D")
 
@@ -148,6 +169,26 @@ func TestRemoveTag(t *testing.T) {
 	task.RemoveTag("api")
 	if len(task.Tags) != 0 {
 		t.Errorf("tag should be removed, got %v", task.Tags)
+	}
+}
+
+func TestRemoveTagCaseInsensitive(t *testing.T) {
+	task := NewTask(1, "T", "D")
+	task.AddTag("api")
+	task.RemoveTag("API")
+	if len(task.Tags) != 0 {
+		t.Errorf("RemoveTag should be case-insensitive, got %v", task.Tags)
+	}
+}
+
+func TestRemoveTagUpdatesTimestamp(t *testing.T) {
+	task := NewTask(1, "T", "D")
+	task.AddTag("api")
+	before := task.UpdatedAt
+	time.Sleep(time.Millisecond)
+	task.RemoveTag("api")
+	if !task.UpdatedAt.After(before) {
+		t.Error("UpdatedAt should be updated after RemoveTag")
 	}
 }
 

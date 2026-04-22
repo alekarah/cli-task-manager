@@ -96,6 +96,14 @@ class TestStorageFilter(unittest.TestCase):
         result = self.storage.filter_tasks_by_tag("API")
         self.assertEqual(len(result), 1)
 
+    def test_filter_by_tag_multiple_matches(self):
+        t1 = self.storage.add_task("A", "a")
+        t1.add_tag("devops")
+        t2 = self.storage.add_task("B", "b")
+        t2.add_tag("devops")
+        result = self.storage.filter_tasks_by_tag("devops")
+        self.assertEqual(len(result), 2)
+
     def test_filter_by_tag_no_match(self):
         result = self.storage.filter_tasks_by_tag("nonexistent")
         self.assertEqual(result, [])
@@ -192,6 +200,11 @@ class TestStorageSort(unittest.TestCase):
         times = [t.updated_at for t in result]
         self.assertEqual(times, sorted(times, reverse=True))
 
+    def test_sort_by_created(self):
+        result = self.storage.sort_tasks("created")
+        times = [t.created_at for t in result]
+        self.assertEqual(times, sorted(times))
+
 
 class TestStoragePersistence(unittest.TestCase):
     def test_save_and_load_roundtrip(self):
@@ -245,6 +258,28 @@ class TestStorageExportCSV(unittest.TestCase):
         finally:
             os.unlink(tmpfile)
 
+    def test_export_csv_data_row_content(self):
+        with tempfile.NamedTemporaryFile(suffix=".csv", delete=False) as f:
+            tmpfile = f.name
+
+        try:
+            storage = Storage(filename=":memory_test:")
+            storage.tasks = []
+            storage.next_id = 1
+            t = storage.add_task("My Task", "My Desc")
+            t.add_tag("api")
+            storage.export_to_csv(tmpfile)
+
+            with open(tmpfile, encoding="utf-8", newline="") as f:
+                reader = csv.reader(f)
+                rows = list(reader)
+            data_row = rows[1]
+            self.assertEqual(data_row[0], "1")       # ID
+            self.assertEqual(data_row[1], "My Task")  # название
+            self.assertIn("#api", data_row[6])        # теги
+        finally:
+            os.unlink(tmpfile)
+
     def test_export_csv_empty_storage(self):
         with tempfile.NamedTemporaryFile(suffix=".csv", delete=False) as f:
             tmpfile = f.name
@@ -277,6 +312,29 @@ class TestStorageExportMarkdown(unittest.TestCase):
                 content = f.read()
             self.assertIn("# Список задач", content)
             self.assertIn("MD Task", content)
+        finally:
+            os.unlink(tmpfile)
+
+    def test_export_markdown_all_statuses(self):
+        with tempfile.NamedTemporaryFile(suffix=".md", delete=False) as f:
+            tmpfile = f.name
+
+        try:
+            storage = Storage(filename=":memory_test:")
+            storage.tasks = []
+            storage.next_id = 1
+            storage.add_task("Todo task", "d")
+            t2 = storage.add_task("In progress task", "d")
+            t2.update_status("in_progress")
+            t3 = storage.add_task("Done task", "d")
+            t3.update_status("done")
+            storage.export_to_markdown(tmpfile)
+
+            with open(tmpfile, encoding="utf-8") as f:
+                content = f.read()
+            self.assertIn("Todo task", content)
+            self.assertIn("In progress task", content)
+            self.assertIn("Done task", content)
         finally:
             os.unlink(tmpfile)
 
